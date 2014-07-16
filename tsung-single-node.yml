@@ -1,0 +1,39 @@
+heat_template_version: 2013-05-23
+
+description: |
+  Deploy tsung for load testing with a multi node.
+
+parameters:
+  key_name:
+    description: Name of the key to add to the build of each server
+    type: string
+
+  server_name:
+    description: Name of the server
+    type: string
+
+resources:
+  tsung-master:
+    type: Rackspace::Cloud::Server
+    properties:
+      flavor: 2 GB Performance
+      image: Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)
+      name: { get_param: server_name }
+      key_name: { get_param: key_name }
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash -v
+            apt-get update
+            apt-get -y install build-essential debhelper erlang-nox erlang-dev python-matplotlib gnuplot libtemplate-perl sphinx-common
+            wget http://tsung.erlang-projects.org/dist/tsung-1.5.1.tar.gz
+            tar -zxvf tsung-1.5.1.tar.gz
+            cd tsung-1.5.1
+            ./configure
+            make
+            make deb
+            cd ..
+            dpkg -i tsung_1.5.1-1_all.deb
+            echo key_name > /root/key_used
+          params:
+            key_used: { get_param: key_name }
